@@ -1,6 +1,7 @@
 package org.apache.hadoop.contrib.ftp;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +15,7 @@ import java.net.URISyntaxException;
  */
 public class HdfsOverFtpSystem {
 
-	private static DistributedFileSystem dfs = null;
+	private static FileSystem dfs = null;
 
 	public static String HDFS_URI = "";
 
@@ -27,10 +28,10 @@ public class HdfsOverFtpSystem {
 	private static void hdfsInit() throws IOException {
 		dfs = new DistributedFileSystem();
 		Configuration conf = new Configuration();
-		conf.set("hadoop.job.ugi", superuser + "," + supergroup);
 		try {
-			dfs.initialize(new URI(HDFS_URI), conf);
-		} catch (URISyntaxException e) {
+			conf.set("fs.defaultFS", "hdfs://192.168.1.120:9000");
+			dfs = FileSystem.get(URI.create(HDFS_URI), conf, "root");
+		} catch (Exception e) {
 			log.error("DFS Initialization error", e);
 		}
 	}
@@ -45,7 +46,7 @@ public class HdfsOverFtpSystem {
 	 * @return dfs
 	 * @throws IOException
 	 */
-	public static DistributedFileSystem getDfs() throws IOException {
+	public static FileSystem getDfs() throws IOException {
 		if (dfs == null) {
 			hdfsInit();
 		}

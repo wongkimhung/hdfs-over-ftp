@@ -7,7 +7,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +76,7 @@ public class HdfsFileObject implements FileObject {
 	public boolean isDirectory() {
 		try {
 			log.debug("is directory? : " + path);
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fs = dfs.getFileStatus(path);
 			return fs.isDir();
 		} catch (IOException e) {
@@ -93,7 +93,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	private FsPermission getPermissions() throws IOException {
 //        try {
-		DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+		FileSystem dfs = HdfsOverFtpSystem.getDfs();
 		return dfs.getFileStatus(path).getPermission();
 //        } catch (IOException e) {
 //            e.printStackTrace();
@@ -108,7 +108,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public boolean isFile() {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			return dfs.isFile(path);
 		} catch (IOException e) {
 			log.debug(path + " is not file", e);
@@ -123,7 +123,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public boolean doesExist() {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			dfs.getFileStatus(path);
 			return true;
 		} catch (IOException e) {
@@ -221,7 +221,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public String getOwnerName() {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fs = dfs.getFileStatus(path);
 			return fs.getOwner();
 		} catch (IOException e) {
@@ -237,7 +237,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public String getGroupName() {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fs = dfs.getFileStatus(path);
 			return fs.getGroup();
 		} catch (IOException e) {
@@ -262,7 +262,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public long getLastModified() {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fs = dfs.getFileStatus(path);
 			return fs.getModificationTime();
 		} catch (IOException e) {
@@ -278,7 +278,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public long getSize() {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fs = dfs.getFileStatus(path);
 			log.info("getSize(): " + path + " : " + fs.getLen());
 			return fs.getLen();
@@ -301,7 +301,7 @@ public class HdfsFileObject implements FileObject {
 		}
 
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			dfs.mkdirs(path);
 			dfs.setOwner(path, user.getName(), user.getMainGroup());
 			return true;
@@ -318,7 +318,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public boolean delete() {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			dfs.delete(path, true);
 			return true;
 		} catch (IOException e) {
@@ -335,7 +335,7 @@ public class HdfsFileObject implements FileObject {
 	 */
 	public boolean move(FileObject fileObject) {
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			dfs.rename(path, new Path(fileObject.getFullName()));
 			return true;
 		} catch (IOException e) {
@@ -357,7 +357,7 @@ public class HdfsFileObject implements FileObject {
 		}
 
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FileStatus fileStats[] = dfs.listStatus(path);
 
 			FileObject fileObjects[] = new FileObject[fileStats.length];
@@ -386,7 +386,7 @@ public class HdfsFileObject implements FileObject {
 		}
 
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FSDataOutputStream out = dfs.create(path);
 			dfs.setOwner(path, user.getName(), user.getMainGroup());
 			return out;
@@ -409,7 +409,7 @@ public class HdfsFileObject implements FileObject {
 			throw new IOException("No read permission : " + path);
 		}
 		try {
-			DistributedFileSystem dfs = HdfsOverFtpSystem.getDfs();
+			FileSystem dfs = HdfsOverFtpSystem.getDfs();
 			FSDataInputStream in = dfs.open(path);
 			return in;
 		} catch (IOException e) {
