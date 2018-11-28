@@ -2,13 +2,11 @@ package org.apache.hadoop.contrib.ftp;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Class to store DFS connection
@@ -25,12 +23,12 @@ public class HdfsOverFtpSystem {
 	private final static Logger log = LoggerFactory.getLogger(HdfsOverFtpSystem.class);
 
 
-	private static void hdfsInit() throws IOException {
-		dfs = new DistributedFileSystem();
+	private static void hdfsInit() throws IOException, InterruptedException {
 		Configuration conf = new Configuration();
+		conf.set("hadoop.job.ugi", superuser + "," + supergroup);
 		try {
 			conf.set("fs.defaultFS", "hdfs://192.168.1.120:9000");
-			dfs = FileSystem.get(URI.create(HDFS_URI), conf, "root");
+			dfs = FileSystem.get(URI.create(HDFS_URI), conf, superuser);
 		} catch (Exception e) {
 			log.error("DFS Initialization error", e);
 		}
@@ -45,8 +43,9 @@ public class HdfsOverFtpSystem {
 	 *
 	 * @return dfs
 	 * @throws IOException
+	 * @throws InterruptedException 
 	 */
-	public static FileSystem getDfs() throws IOException {
+	public static FileSystem getDfs() throws IOException, InterruptedException {
 		if (dfs == null) {
 			hdfsInit();
 		}

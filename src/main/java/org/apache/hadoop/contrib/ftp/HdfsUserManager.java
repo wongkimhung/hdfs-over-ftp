@@ -3,15 +3,22 @@ package org.apache.hadoop.contrib.ftp;
 import org.apache.ftpserver.FtpServerConfigurationException;
 import org.apache.ftpserver.ftplet.*;
 import org.apache.ftpserver.usermanager.*;
+import org.apache.ftpserver.usermanager.impl.AbstractUserManager;
+import org.apache.ftpserver.usermanager.impl.ConcurrentLoginPermission;
+import org.apache.ftpserver.usermanager.impl.ConcurrentLoginRequest;
+import org.apache.ftpserver.usermanager.impl.TransferRatePermission;
+import org.apache.ftpserver.usermanager.impl.TransferRateRequest;
+import org.apache.ftpserver.usermanager.impl.WritePermission;
+import org.apache.ftpserver.usermanager.impl.WriteRequest;
 import org.apache.ftpserver.util.BaseProperties;
 import org.apache.ftpserver.util.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -28,11 +35,15 @@ public class HdfsUserManager extends AbstractUserManager {
 
 	private BaseProperties userDataProp;
 
-	private File userDataFile = new File("users.conf");
+	private InputStream userDataFile = null;
+	private String userDataFilePath = "users.conf";
 
 	private boolean isConfigured = false;
 
 	private PasswordEncryptor passwordEncryptor = new Md5PasswordEncryptor();
+	
+	public HdfsUserManager() throws IOException {
+	}
 
 
 	/**
@@ -40,7 +51,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	 *
 	 * @return The file
 	 */
-	public File getFile() {
+	public InputStream getFile() {
 		return userDataFile;
 	}
 
@@ -50,7 +61,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	 *
 	 * @param propFile A file containing users
 	 */
-	public void setFile(File propFile) {
+	public void setFile(InputStream propFile) {
 		if (isConfigured) {
 			throw new IllegalStateException("Must be called before configure()");
 		}
@@ -65,6 +76,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	 * @return The password encryptor. Default to {@link Md5PasswordEncryptor}
 	 *         if no other has been provided
 	 */
+	@Override
 	public PasswordEncryptor getPasswordEncryptor() {
 		return passwordEncryptor;
 	}
@@ -97,10 +109,10 @@ public class HdfsUserManager extends AbstractUserManager {
 		try {
 			userDataProp = new BaseProperties();
 
-			if (userDataFile != null && userDataFile.exists()) {
-				FileInputStream fis = null;
+			if (userDataFile != null) {
+				InputStream fis = null;
 				try {
-					fis = new FileInputStream(userDataFile);
+					fis = userDataFile;
 					userDataProp.load(fis);
 				} finally {
 					IoUtils.close(fis);
@@ -109,7 +121,7 @@ public class HdfsUserManager extends AbstractUserManager {
 		} catch (IOException e) {
 			throw new FtpServerConfigurationException(
 					"Error loading user data file : "
-							+ userDataFile.getAbsolutePath(), e);
+							+ userDataFile, e);
 		}
 
 		convertDeprecatedPropertyNames();
@@ -146,6 +158,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	/**
 	 * Save user data. Store the properties.
 	 */
+	@Override
 	public synchronized void save(User usr) throws FtpException {
 		lazyInit();
 
@@ -206,7 +219,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	 * @throws FtpException
 	 */
 	private void saveUserData() throws FtpException {
-		File dir = userDataFile.getAbsoluteFile().getParentFile();
+		File dir = new File(userDataFilePath).getParentFile();
 		if (dir != null && !dir.exists() && !dir.mkdirs()) {
 			String dirName = dir.getAbsolutePath();
 			throw new FtpServerConfigurationException(
@@ -216,7 +229,7 @@ public class HdfsUserManager extends AbstractUserManager {
 		// save user data
 		FileOutputStream fos = null;
 		try {
-			fos = new FileOutputStream(userDataFile);
+			fos = new FileOutputStream(userDataFilePath);
 			userDataProp.store(fos, "Generated file - don't edit (please)");
 		} catch (IOException ex) {
 			LOG.error("Failed saving user data", ex);
@@ -230,6 +243,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	 * Delete an user. Removes all this user entries from the properties. After
 	 * removing the corresponding from the properties, save the data.
 	 */
+	@Override
 	public synchronized void delete(String usrName) throws FtpException {
 		lazyInit();
 
@@ -286,6 +300,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	/**
 	 * Get all user names.
 	 */
+	@Override
 	public synchronized String[] getAllUserNames() {
 		lazyInit();
 
@@ -317,6 +332,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	/**
 	 * Load user data.
 	 */
+	@Override
 	public synchronized User getUserByName(String userName) {
 		lazyInit();
 
@@ -354,7 +370,7 @@ public class HdfsUserManager extends AbstractUserManager {
 
 		authorities.add(new TransferRatePermission(downloadRate, uploadRate));
 
-		user.setAuthorities(authorities.toArray(new Authority[0]));
+		user.setAuthorities(authorities);
 
 		user.setMaxIdleTime(userDataProp.getInteger(baseKey
 				+ ATTR_MAX_IDLE_TIME, 0));
@@ -365,6 +381,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	/**
 	 * User existance check
 	 */
+	@Override
 	public synchronized boolean doesExist(String name) {
 		lazyInit();
 
@@ -375,6 +392,7 @@ public class HdfsUserManager extends AbstractUserManager {
 	/**
 	 * User authenticate method
 	 */
+	@Override
 	public synchronized User authenticate(Authentication authentication)
 			throws AuthenticationFailedException {
 		lazyInit();

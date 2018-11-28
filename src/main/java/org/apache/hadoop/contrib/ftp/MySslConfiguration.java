@@ -1,10 +1,10 @@
 package org.apache.hadoop.contrib.ftp;
 
 import org.apache.ftpserver.FtpServerConfigurationException;
-import org.apache.ftpserver.ssl.AliasKeyManager;
 import org.apache.ftpserver.ssl.ClientAuth;
-import org.apache.ftpserver.ssl.ExtendedAliasKeyManager;
 import org.apache.ftpserver.ssl.SslConfiguration;
+import org.apache.ftpserver.ssl.impl.AliasKeyManager;
+import org.apache.ftpserver.ssl.impl.ExtendedAliasKeyManager;
 import org.apache.ftpserver.util.ClassUtils;
 import org.apache.ftpserver.util.IoUtils;
 import org.slf4j.Logger;
@@ -329,6 +329,7 @@ public class MySslConfiguration implements SslConfiguration {
 	/**
 	 * @see SslConfiguration#getSSLContext(String)
 	 */
+	@Override
 	public synchronized SSLContext getSSLContext(String protocol)
 			throws GeneralSecurityException {
 		lazyInit();
@@ -375,6 +376,7 @@ public class MySslConfiguration implements SslConfiguration {
 	/**
 	 * @see SslConfiguration#getClientAuth()
 	 */
+	@Override
 	public ClientAuth getClientAuth() {
 		return clientAuthReqd;
 	}
@@ -382,6 +384,7 @@ public class MySslConfiguration implements SslConfiguration {
 	/**
 	 * @see SslConfiguration#getSSLContext()
 	 */
+	@Override
 	public SSLContext getSSLContext() throws GeneralSecurityException {
 		return getSSLContext(sslProtocol);
 	}
@@ -389,6 +392,7 @@ public class MySslConfiguration implements SslConfiguration {
 	/**
 	 * @see SslConfiguration#getEnabledCipherSuites()
 	 */
+	@Override
 	public String[] getEnabledCipherSuites() {
 		if (enabledCipherSuites != null) {
 			return enabledCipherSuites.clone();
@@ -430,5 +434,10 @@ public class MySslConfiguration implements SslConfiguration {
 	 */
 	public void setKeyAlias(String keyAlias) {
 		this.keyAlias = keyAlias;
+	}
+
+	@Override
+	public SSLSocketFactory getSocketFactory() throws GeneralSecurityException {
+		return null;
 	}
 }
